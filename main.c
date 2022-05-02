@@ -20,13 +20,14 @@
 
 int is_lock_owner = false;
 int is_error = false;
-int locks = 0;
-int unlocks = 0;
+int process_locks_statistic = 0;
+int process_unlocks_statistic = 0;
 
-void lockFile(char *file, int *is_own_lock, int is_fatal) {
+void makeLock(char *file, int *is_own_lock, int is_fatal_error) {
     char lock_file_name_buff[buff_size];
     char pid_buff[buff_size];
     sprintf(lock_file_name_buff, "%s.lck", file);
+    // If lock file exist then wait until it to be deleted
     while (true) {
         struct stat file_info;
         if (stat(lock_file_name_buff, &file_info) == -1) {
@@ -38,6 +39,7 @@ void lockFile(char *file, int *is_own_lock, int is_fatal) {
             break;
         }
     }
+    // If lock file doesn't exist then create it
     int fd_lock = open(lock_file_name_buff, O_WRONLY | O_CREAT | O_TRUNC, mode);
     if (fd_lock == -1) {
         perror(creating_error);
@@ -46,16 +48,17 @@ void lockFile(char *file, int *is_own_lock, int is_fatal) {
     *is_own_lock = true;
     pid_t pid = getpid();
     sprintf(pid_buff, "%d\n", pid);
+    // Write process PID to lock file
     if (write(fd_lock, pid_buff, strlen(pid_buff)) != strlen(pid_buff)) {
         is_error = true;
         fprintf(stderr, writing_error);
-        is_fatal ? exit(EXIT_FAILURE) : kill(getpid(), SIGINT);
+        is_fatal_error ? exit(EXIT_FAILURE) : kill(getpid(), SIGINT);
     }
 
     close(fd_lock);
 }
 
-void unlock(char *file, int *is_own_lock, int is_fatal) {
+void makeUnlock(char *file, int *is_own_lock, int is_fatal) {
     char lock_file_name_buff[buff_size];
     char lock_file_buff[buff_size];
     sprintf(lock_file_name_buff, "%s.lck", file);
@@ -93,6 +96,7 @@ void unlock(char *file, int *is_own_lock, int is_fatal) {
         is_fatal ? exit(EXIT_FAILURE) : kill(getpid(), SIGINT);
     }
 
+    // Detect if PIDs same or not
     if (pid != lockPid) {
         is_error = true;
         fprintf(stderr, invalid_pid);
@@ -107,14 +111,14 @@ void unlock(char *file, int *is_own_lock, int is_fatal) {
 void handler(int sig) {
     char statistic_buff[buff_size];
     int is_own_lock = false;
-    pid_t pid = getpid();
+    pid_t process_pid = getpid();
 
-    lockFile("statistic.txt", &is_own_lock, true);
+    makeLock("statistic.txt", &is_own_lock, true);
 
     if (is_error) {
-        sprintf(statistic_buff, "Process PID: %d (%d locks, %d unlocks). ERROR OCCURRED\n", pid, locks, unlocks);
+        sprintf(statistic_buff, "Process PID: %d (%d locks, %d unlocks). ERROR OCCURRED\n", process_pid, process_locks_statistic, process_unlocks_statistic);
     } else {
-        sprintf(statistic_buff, "Process PID: %d (%d locks, %d unlocks).\n", pid, locks, unlocks);
+        sprintf(statistic_buff, "Process PID: %d (%d locks, %d unlocks).\n", process_pid, process_locks_statistic, process_unlocks_statistic);
     }
 
     int statistic_fd = open("statistic.txt", O_WRONLY | O_APPEND | O_CREAT, mode);
@@ -124,7 +128,7 @@ void handler(int sig) {
     }
 
     close(statistic_fd);
-    unlock("statistic.txt", &is_own_lock, true);
+    makeUnlock("statistic.txt", &is_own_lock, true);
 
     exit(EXIT_SUCCESS);
 }
@@ -132,11 +136,11 @@ void handler(int sig) {
 void lock() {
     signal(SIGINT, handler);
     while (true) {
-        lockFile("file_for_lock.txt", &is_lock_owner, false);
-        locks++;
+        makeLock("file_for_lock.txt", &is_lock_owner, false);
+        process_locks_statistic++;
         sleep(1);
-        unlock("file_for_lock.txt", &is_lock_owner, false);
-        unlocks++;
+        makeUnlock("file_for_lock.txt", &is_lock_owner, false);
+        process_unlocks_statistic++;
     }
 }
 
