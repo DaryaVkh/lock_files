@@ -1,0 +1,11 @@
+---Statistic---
+Process PID: 31526 (3 locks, 2 unlocks). ERROR OCCURRED
+Process PID: 31535 (1 locks, 0 unlocks). ERROR OCCURRED
+Process PID: 31531 (4 locks, 3 unlocks). ERROR OCCURRED
+Process PID: 31537 (1 locks, 0 unlocks). ERROR OCCURRED
+Process PID: 31547 (1 locks, 0 unlocks). ERROR OCCURRED
+Process PID: 31539 (1 locks, 0 unlocks). ERROR OCCURRED
+Process PID: 31541 (1 locks, 0 unlocks). ERROR OCCURRED
+Process PID: 31545 (1 locks, 0 unlocks). ERROR OCCURRED
+Process PID: 31543 (1 locks, 0 unlocks). ERROR OCCURRED
+Process PID: 31533 (65 locks, 64 unlocks).
